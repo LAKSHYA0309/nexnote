@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import DashboardSetup from "@/components/dashboardSetUp/dashboardSetup";
 import prisma from "@/lib/prisma";
-import { getUserSubscriptionStatus } from "@/lib/queries/db.queries";
 import { redirect } from "next/navigation";
 import React from "react";
 
@@ -15,11 +14,6 @@ const DashboardPage = async () => {
     },
   });
 
-  const { data: subscription, error: subscriptionError } = await getUserSubscriptionStatus(session.user.id as string); 
-  
-  if (subscriptionError) {
-    return;
-  }
   if (!Workspace) {
     return (
       <div
@@ -31,7 +25,7 @@ const DashboardPage = async () => {
         items-center
     "
       >
-        <DashboardSetup  subscription={subscription} />
+        <DashboardSetup userId={session.user.id as string} />
       </div>
     );
   }

@@ -21,7 +21,11 @@ import { useAppSotre } from "@/lib/store/state.provider";
 import Collaboratorssearch from "../global/collaboratorssearch";
 import { useRouter } from "next/navigation";
 
-const Workspacecreator = () => {
+interface WorkspacecreatorProps {
+  userId?: string;
+}
+
+const Workspacecreator = ({ userId }: WorkspacecreatorProps) => {
   const [title, setTitle] = useState("");
   const [permissions, setPermissions] = useState("private");
   const { addWorkspace } = useAppSotre();
@@ -79,18 +83,26 @@ const Workspacecreator = () => {
 
   const createItem = async () => {
     setIsLoading(true);
-    if (data?.user.id) {
+    const activeUserId = userId || data?.user?.id;
+    if (activeUserId) {
       const newWorkspaces = {
         iconId: "💼",
         title,
-        workspaceOwner: data?.user.id as string,
+        workspaceOwner: activeUserId,
       };
-      const workspace = await createWorkSpace(newWorkspaces);
+      const { data: workspace, error } = await createWorkSpace(newWorkspaces);
+      if (error) {
+        toast.error(error);
+        setIsLoading(false);
+        return;
+      }
       if (permissions === "shared") {
         if (workspace) {
           await addCollaborator(collaborators, workspace.id);
           addWorkspace({ ...workspace, folders: [] });
         }
+      } else if (workspace) {
+        addWorkspace({ ...workspace, folders: [] });
       }
       toast.success("Created the workspace"); 
       router.refresh();
@@ -210,9 +222,9 @@ const Workspacecreator = () => {
                   >
                     <div className="flex gap-2 items-center">
                       <Avatar>
-                        <AvatarImage src={c.image as string} />
+                        <AvatarImage src={c.image || undefined} />
                         <AvatarFallback>
-                          {data?.user.name.charAt(0)}
+                          {c.name?.charAt(0) || ""}
                         </AvatarFallback>
                       </Avatar>
                       <div

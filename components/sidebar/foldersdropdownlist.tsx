@@ -9,7 +9,7 @@ import {
 import { toast } from "sonner";
 import { Accordion } from "../ui/accordion";
 import TooltipComponent from "../global/tooltipprovider";
-import { Folder, Subscription } from "@prisma/client";
+import { Folder } from "@prisma/client";
 import { PlusIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Dropdown from "./dropdown";
@@ -17,13 +17,11 @@ import Dropdown from "./dropdown";
 type props = {
   workspaceId: string;
   workspaceFolders: appFoldersType[];
-  subscriptionData: Subscription | null;
 };
 
 const Foldersdropdownlist = ({
   workspaceId,
   workspaceFolders,
-  subscriptionData,
 }: props) => {
   const { setFolders, workspaces, addFolder, setPathName, folderId } =
     useAppSotre();
@@ -56,11 +54,6 @@ const Foldersdropdownlist = ({
   const folders = workspaces.find((w) => w.id === workspaceId)?.folders || [];
 
   const handleCreateFolder = async () => {
-    if (folders.length >= 3 && !subscriptionData) {
-      setOpen(true);
-      return;
-    }
-
     const newFolders = {
       title: "Untitled",
       iconId: "📄",

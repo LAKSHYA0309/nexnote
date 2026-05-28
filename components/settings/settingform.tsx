@@ -45,9 +45,8 @@ import {
   ExternalLink,
   UserIcon,
 } from "lucide-react";
-import { Subscription, User, Workspace } from "@prisma/client";
+import { User, Workspace } from "@prisma/client";
 import { useAppSotre } from "@/lib/store/state.provider";
-import { getUserSubscriptionStatus } from "@/lib/queries/db.queries";
 import { toast } from "sonner";
 
 const Settingform = () => {
@@ -59,7 +58,6 @@ const Settingform = () => {
   const [collaborators, setcollaborators] = useState<User[] | []>([]);
   const [workspaceDetails, setworkspaceDetails] = useState<Workspace>();
   const { workSpaceId, workspaces, updateWorkspace } = useAppSotre();
-  const [subscription, setSubscription] = useState<Subscription | null>();
   const { data } = useSession();
   const router = useRouter();
 
@@ -103,28 +101,10 @@ const Settingform = () => {
     }, 500);
   };
 
-  useEffect(() => {
-    const getuseSubscription = async () => {
-      const { data: subscriptiondata, error } = await getUserSubscriptionStatus(
-        data?.user.name
-      );
 
-      if (error) {
-        return;
-      }
-      if (subscriptiondata) {
-        setSubscription(subscriptiondata);
-      }
-    };
-    getuseSubscription();
-  }, [data?.user?.name]);
 
   const addNewCollaborator = async (user: User) => {
     if (!workSpaceId) return;
-    if (subscription?.status !== "active" && collaborators.length >= 2) {
-      setOpen(true);
-      return;
-    }
     await addCollaborator([user], workSpaceId);
     setcollaborators((prev) => [...prev, user]);
   };
@@ -178,11 +158,7 @@ const Settingform = () => {
           placeholder="Workspace Name"
           onChange={workspaceNameChange}
         />
-        {subscription?.status !== "active" && (
-          <small className="text-muted-foreground">
-            To customize your workspace, you need to be on a Pro Plan
-          </small>
-        )}
+
       </div>
       <>
         <Label htmlFor="permissions">Permissions</Label>
@@ -336,8 +312,8 @@ const Settingform = () => {
         <Separator />
         <div className="flex items-center">
           <Avatar>
-            <AvatarImage src={data?.user.image} />
-            <AvatarFallback>{data?.user.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={data?.user.image || undefined} />
+            <AvatarFallback>{data?.user.name?.charAt(0) || ""}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col ml-6">
             <small className="text-muted-foreground cursor-not-allowed">
@@ -350,47 +326,7 @@ const Settingform = () => {
             <LogOut />
           </div>
         </LogoutButton> */}
-        <p className="flex items-center gap-2 mt-6">
-          <CreditCard size={20} /> Billing & Plan
-        </p>
-        <Separator />
-        <p className="text-muted-foreground">
-          You are currently on a{" "}
-          {subscription?.status === "active" ? "Pro" : "Free"} Plan
-        </p>
-        <Link
-          href="/"
-          target="_blank"
-          className="text-muted-foreground flex flex-row items-center gap-2"
-        >
-          View Plans <ExternalLink size={16} />
-        </Link>
-        {subscription?.status === "active" ? (
-          <div>
-            <Button
-              type="button"
-              size="sm"
-              variant={"secondary"}
-              disabled={loadingPortal}
-              className="text-sm"
-              // onClick={redirectToCustomerPortal}
-            >
-              Manage Subscription
-            </Button>
-          </div>
-        ) : (
-          <div>
-            <Button
-              type="button"
-              size="sm"
-              variant={"secondary"}
-              className="text-sm"
-              onClick={() => setOpen(true)}
-            >
-              Start Plan
-            </Button>
-          </div>
-        )}
+
       </>
       <AlertDialog open={openAlertMessage}>
         <AlertDialogContent>

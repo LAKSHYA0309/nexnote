@@ -12,7 +12,7 @@ export function Provider({
   return (
     <NextThemesProvider {...props}>
       <SessionProvider>
-          {children}
+        {children}
         <Toaster />
       </SessionProvider>
     </NextThemesProvider>

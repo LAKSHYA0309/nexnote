@@ -14,7 +14,6 @@ import { Label } from "@radix-ui/react-label";
 import { Input } from "../ui/input";
 import Loader from "../global/Loader";
 import EmojiPicker from "../global/emojiPicker";
-import { Subscription } from "@prisma/client";
 import { CreateWorkspaceFormSchema } from "@/lib/types";
 import { ImgFormats } from "@/lib/constants";
 import z from "zod";
@@ -24,11 +23,12 @@ import { useSession } from "next-auth/react";
 import { createWorkSpace } from "@/lib/queries/db.queries";
 import { useRouter } from "next/navigation";
 import { useAppSotre } from "@/lib/store/state.provider";
-interface prop {
-  subscription: Subscription | null;
+
+interface DashboardSetupProps {
+  userId: string;
 }
 
-const DashboardSetup = ({ subscription }: prop) => {
+const DashboardSetup: React.FC<DashboardSetupProps> = ({ userId }) => {
   const router = useRouter();
   const { addWorkspace } = useAppSotre();
   const [selectedEmoji, setSelectedEmoji] = useState("💼");
@@ -91,11 +91,15 @@ const DashboardSetup = ({ subscription }: prop) => {
       const workSpaceDetail = {
         iconId: selectedEmoji,
         title: workspaceName,
-        workspaceOwner: data?.user.id as string,
+        workspaceOwner: userId,
         ...(imgUrl && { logo: imgUrl }),
       };
 
-      const Createdworkspace = await createWorkSpace(workSpaceDetail);
+      const { data: Createdworkspace, error: createError } = await createWorkSpace(workSpaceDetail);
+      if (createError) {
+        toast.error(createError, { duration: 5000 });
+        return;
+      }
       if (Createdworkspace) {
         addWorkspace({ ...Createdworkspace, folders: [] });
         startTransition(() => {
@@ -179,15 +183,7 @@ const DashboardSetup = ({ subscription }: prop) => {
               <small className="text-red-600">
                 {errors?.logo?.message?.toString()}
               </small>
-              {subscription?.status !== "active" && (
-                <small
-                  className="
-                  text-muted-foreground
-                  block"
-                >
-                  To customize your workspace, you need to be on a Pro Plan
-                </small>
-              )}
+
             </div>
             <div className="self-end">
               <Button

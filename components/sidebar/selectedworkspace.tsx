@@ -1,7 +1,7 @@
 import { Workspace } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
-import Logo from "@/public/cypresslogo.svg";
+import Logo from "@/public/nexnotelogo.svg";
 import React from "react";
 
 type prop = {

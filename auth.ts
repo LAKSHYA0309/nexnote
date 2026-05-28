@@ -19,40 +19,56 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async signIn({ account }) {
+    async signIn({ account, user }) {
       // console.log("🔐 signIn callback triggered", { provider: account?.provider });
-      if (account?.provider !== "credentials") {
+      if (account?.provider === "credentials") {
+        try {
+          const email = user?.email || "guest@nexnote.com";
+          const dbUser = await prisma.user.findUnique({
+            where: { email },
+          });
+          if (!dbUser) {
+            await prisma.user.create({
+              data: {
+                email,
+                name: user?.name || "Guest User",
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error creating guest user in signIn:", error);
+        }
         return true;
       }
-      return false;
+      return true;
     },
 
     async jwt({ token, trigger, user, session }) {
+      if (user) {
+        token.id = user.id;
+      }
+
       // Detect if we're running in Edge Runtime
       const isEdgeRuntime =
         typeof process === "undefined" || process.env.NEXT_RUNTIME === "edge";
 
-      // ✅ Only run Prisma queries outside of Edge Runtime (not in middleware)
-      if (token?.email && !isEdgeRuntime) {
-        const emailToQuery = user?.email || token.email;
-        // console.log("📧 Email to query:", emailToQuery);
+      const emailToQuery = user?.email || token?.email;
 
+      // ✅ Only run Prisma queries outside of Edge Runtime (not in middleware)
+      if (emailToQuery && !isEdgeRuntime) {
         try {
           // console.log("🔍 Fetching user from database...");
           const dbUser = await prisma.user.findUnique({
             where: { email: emailToQuery as string },
           });
 
-
           if (dbUser) {
             token.id = dbUser.id;
             token.name = dbUser.name;
             token.email = dbUser.email;
-            // console.log("✅ Token updated with library roles:", token.libraryRoles);
           }
         } catch (error) {
           console.error("❌ Error fetching user data:", error);
-          // Keep existing token data if database query fails
         }
       }
 
@@ -66,7 +82,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         ...session,
         user: {
           ...session.user,
-          id: token.id,
+          id: token.id as string,
           name: token.name,
           email: token.email
         },

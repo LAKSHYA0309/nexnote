@@ -1,27 +1,8 @@
 "use server";
-import { Folder, Subscription, Workspace, User, File } from "@prisma/client";
+import { Folder, Workspace, User, File } from "@prisma/client";
 import prisma from "../prisma";
 import { validate } from "uuid";
 import { revalidatePath } from "next/cache";
-
-export const getUserSubscriptionStatus = async (userid: string) => {
-  try {
-    const data = await prisma.subscription.findFirst({
-      where: {
-        userId: userid,
-      },
-    });
-
-    if (data) {
-      return { data: data as Subscription, error: null };
-    } else {
-      return { data: null, error: null };
-    }
-  } catch (error) {
-    console.log("Error while fetching the subscription status", error);
-    return { data: null, error: `Error : ${error}` };
-  }
-};
 
 export const createWorkSpace = async (values: any) => {
   try {
@@ -34,9 +15,10 @@ export const createWorkSpace = async (values: any) => {
       },
     });
 
-    return createdWorkspace;
-  } catch (error) {
+    return { data: createdWorkspace, error: null };
+  } catch (error: any) {
     console.log(error, "while creating the workspace ");
+    return { data: null, error: error?.message || "Failed to create workspace" };
   }
 };
 

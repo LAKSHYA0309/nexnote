@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
-import Logo from '@/public/cypresslogo.svg';
+import Logo from '@/public/nexnotelogo.svg';
 
 import {
   NavigationMenu,
@@ -19,7 +19,6 @@ import { Button } from '../ui/button';
 const routes = [
   { title: 'Features', href: '#features' },
   { title: 'Reasources', href: '#resources' },
-  { title: 'Pricing', href: '#pricing' },
   { title: 'Testimonials', href: '#testimonial' },
 ];
 
@@ -78,7 +77,7 @@ const Header = () => {
       >
         <Image
           src={Logo}
-          alt="Cypress Logo"
+          alt="NexNote Logo"
           width={25}
           height={25}
         />
@@ -87,7 +86,7 @@ const Header = () => {
           dark:text-white
         "
         >
-          cypress.
+          NexNote.
         </span>
       </Link>
       <NavigationMenu className="hidden md:block">
@@ -152,35 +151,7 @@ const Header = () => {
               </ul>
             </NavigationMenuContent>
           </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuTrigger
-              onClick={() => setPath('#pricing')}
-              className={cn({
-                'dark:text-white': path === '#pricing',
-                'dark:text-white/40': path !== '#pricing',
-                'font-normal': true,
-                'text-xl': true,
-              })}
-            >
-              Pricing
-            </NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <ul className="grid w-[400px] gap-3 p-4  md:grid-row-2  ">
-                <ListItem
-                  title="Pro Plan"
-                  href={'#'}
-                >
-                  Unlock full power with collaboration.
-                </ListItem>
-                <ListItem
-                  title={'free Plan'}
-                  href={'#'}
-                >
-                  Great for teams just starting out.
-                </ListItem>
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
+
           <NavigationMenuItem>
             <NavigationMenuContent>
               <ul

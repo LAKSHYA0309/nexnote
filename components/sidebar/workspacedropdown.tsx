@@ -11,6 +11,7 @@ type prop = {
   collaboratorWorkspace: Workspace[] | [];
   personalWorkspace: Workspace[] | [];
   defaultWorkSpace: Workspace | undefined;
+  userId: string;
 };
 
 const Workspacedropdown = ({
@@ -18,6 +19,7 @@ const Workspacedropdown = ({
   collaboratorWorkspace,
   personalWorkspace,
   defaultWorkSpace,
+  userId,
 }: prop) => {
   const { setWorkspaces } = useAppSotre();
   const [selectedWorksapce, setSeletectedWorkspace] =
@@ -118,7 +120,7 @@ const Workspacedropdown = ({
             </div>
             <CustomDialogTrigger
               header="Create A Workspace"
-              content={<Workspacecreator />}
+              content={<Workspacecreator userId={userId} />}
               description="Workspaces give you the power to collaborate with others. You can change your workspace privacy settings after creating the workspace too."
             >
               <div

@@ -1,7 +1,7 @@
 "use client";
 import { Menu } from "lucide-react";
 import React, { useState } from "react";
-import CypressPageIcon from "@/public/cypresslogo.svg";
+import NexNotePageIcon from "@/public/nexnotelogo.svg";
 import clsx from "clsx";
 
 type props = {
@@ -17,7 +17,7 @@ export const nativeNavigations = [
   {
     title: "Pages",
     id: "pages",
-    customIcon: CypressPageIcon,
+    customIcon: NexNotePageIcon,
   },
 ] as const;
 

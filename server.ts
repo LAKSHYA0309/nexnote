@@ -15,7 +15,7 @@ declare global{
 export const user = globalThis.usersDetails || (globalThis.usersDetails = {});
 export const socketToUser = globalThis.socketToUser || (globalThis.socketToUser= new Map());
 
-const port = 8000;
+const port = process.env.PORT || 8000;
 
 const httpserver = createServer();
 

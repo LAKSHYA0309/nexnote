@@ -3,7 +3,6 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { twMerge } from "tailwind-merge";
 import {
-  getUserSubscriptionStatus,
   getFolders,
   getPersonalWorkSpace,
   getCollboratorWorkspace,
@@ -20,13 +19,11 @@ const Sidebar = async ({ workspaceid }: { workspaceid: string }) => {
   if (!session) {
     redirect("/login");
   }
-  const { data: subscriptionData, error: subscriptionerror } =  await getUserSubscriptionStatus(session?.user.id);
-
   const { data: workSpacefolders, error: folderError } = await getFolders(
     workspaceid
   );
 
-  if (subscriptionerror || folderError) {
+  if (folderError) {
     redirect("/dashboard");
   }
 
@@ -54,10 +51,10 @@ const Sidebar = async ({ workspaceid }: { workspaceid: string }) => {
           sharedWorkspace={sharedWorkSpace}
           collaboratorWorkspace={collaboratorWorkspace}
           defaultWorkSpace={defaultWorkspace}
+          userId={session.user.id as string}
         />
         <Planusage
           foldersLength={workSpacefolders?.length || 0}
-          subscription={subscriptionData} 
           workSpaceid={workspaceid}
         />
         <Nativenavigation workspaceid={workspaceid} />
@@ -80,7 +77,6 @@ const Sidebar = async ({ workspaceid }: { workspaceid: string }) => {
           <Foldersdropdownlist
             workspaceFolders={workSpacefolders || []}
             workspaceId={workspaceid} 
-            subscriptionData={subscriptionData}
           />
         </ScrollArea>
       </div>
