@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import TitleSection from "@/components/landing-page/titlesection";
-import Banner from "@/public/appBanner.png"; 
+import Banner from "@/public/notes_app_hero_mockup.png"; 
 import Cal from '@/public/cal.png'; 
 import { CLIENTS, USERS } from '@/lib/constants';
 import { randomUUID } from 'crypto';
@@ -31,7 +31,7 @@ const Homepage = async() => {
       >
         <TitleSection
           pill="✨ Your Workspace, Perfected"
-          title="All-In-One Collaboration and Productivity Platform"
+          title="All-In-One Note-Taking and Productivity Platform"
         />
         <div
           className="bg-white
