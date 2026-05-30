@@ -115,7 +115,7 @@ const LoginPage = async() => {
       {/* Floating Bottom Copyright */}
       <div className="absolute bottom-6 left-0 right-0 z-10">
         <p className="text-center text-neutral-600 text-xs tracking-wider">
-          © 2025 NexNote. All rights reserved.
+          © 2026 NexNote. All rights reserved.
         </p>
       </div>
     </div>

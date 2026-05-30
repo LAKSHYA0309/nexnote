@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NexNote – Supreme Note-Taking Platform",
+  title: "NexNote Note-Taking Platform",
   description:
     "NexNote is a powerful, Notion-inspired note-taking platform. Write, organize, and collaborate with rich text, AI assistance, and real-time collaboration.",
   icons: {

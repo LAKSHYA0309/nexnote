@@ -51,21 +51,7 @@ const Homepage = async() => {
           active:scale-[0.98]
         "
         >
-          <Button
-            variant="secondary"
-            className=" w-full
-            rounded-[16px]
-            p-6
-            text-2xl
-            dark:bg-black
-            cursor-pointer
-            border-none
-            text-white
-            font-bold
-          "
-          >
-            Get NexNote Free
-          </Button>
+          
         </div>
         <div
           className="md:mt-[-50px]
@@ -102,7 +88,7 @@ const Homepage = async() => {
         <div
           className="overflow-hidden
           flex
-          after:content['']
+          after:content-['']
           after:dark:from-brand-dark
           after:to-transparent
           after:from-background
@@ -114,7 +100,7 @@ const Homepage = async() => {
           after:z-10
           after:absolute
 
-          before:content['']
+          before:content-['']
           before:dark:from-brand-dark
           before:to-transparent
           before:from-background
@@ -246,7 +232,7 @@ const Homepage = async() => {
                 <CustomCard
                   key={testimonial.name}
                   className="w-[500px]
-                  shrink-0s
+                  shrink-0
                   rounded-xl
                   dark:bg-gradient-to-t
                   dark:from-border dark:to-background
