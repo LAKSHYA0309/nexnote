@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { File } from "@/prisma/zod";
-import { Folder, Workspace } from "@prisma/client";
+import { Folder, Workspace, File } from "@prisma/client";
 
 export type appFoldersType = Folder & { files: File[] | [] };
 export type appWorkspacesType = Workspace & {
