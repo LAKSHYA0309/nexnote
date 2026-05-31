@@ -34,7 +34,7 @@ import BannerUpload from "../banneruploadbutton/bannerupload";
 import type QuillType from "quill";
 import "quill/dist/quill.snow.css";
 import { Folder, File, Workspace, User } from "@prisma/client";
-import { XCircleIcon, Image as ImageIcon } from "lucide-react";
+import { XCircleIcon, Image as ImageIcon, Search, File as FileIcon, Folder as FolderIcon, X, Globe } from "lucide-react";
 import { handleImgDelete } from "@/lib/uploadImg";
 import UseSocket from "@/lib/store/socket.provider";
 import { useSession } from "next-auth/react";
@@ -87,6 +87,10 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
   const [renderKey, setRenderKey] = useState<number>(1);
   const [localCursor, setLocalCursor] = useState<any>([]);
   const session = useSession();
+  const sessionUserRef = useRef(session?.data?.user);
+  useEffect(() => {
+    sessionUserRef.current = session?.data?.user;
+  }, [session?.data?.user]);
   const {
     workSpaceId,
     workspaces,
@@ -108,6 +112,15 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
   const [showBubbleMenu, setShowBubbleMenu] = useState(false);
   const [bubblePos, setBubblePos] = useState({ x: 0, y: 0 });
 
+  const [showBookmarkDialog, setShowBookmarkDialog] = useState(false);
+  const [showPageLinkDialog, setShowPageLinkDialog] = useState(false);
+  const [bookmarkUrl, setBookmarkUrl] = useState("");
+  const [bookmarkTitle, setBookmarkTitle] = useState("");
+  const [bookmarkDesc, setBookmarkDesc] = useState("");
+  const [pageSearchQuery, setPageSearchQuery] = useState("");
+  const [savedRange, setSavedRange] = useState<any>(null);
+  const [isSelectionLink, setIsSelectionLink] = useState(false);
+
   useEffect(() => {
     if (!quill) return;
 
@@ -119,6 +132,8 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
             x: bounds.left + bounds.width / 2,
             y: bounds.top + 230,
           });
+          const formats = quill.getFormat(range.index, range.length);
+          setIsSelectionLink(!!formats.link);
           setShowBubbleMenu(true);
         }
       } else {
@@ -137,6 +152,8 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
     const range = quill.getSelection();
     if (range) {
       quill.formatText(range.index, range.length, format, value);
+      const formats = quill.getFormat(range.index, range.length);
+      setIsSelectionLink(!!formats.link);
     }
   };
 
@@ -282,6 +299,12 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
           <li>[ ] Build responsive layouts</li>
         </ul><p><br></p>`
       );
+    } else if (id === "link-bookmark") {
+      setSavedRange(range);
+      setShowBookmarkDialog(true);
+    } else if (id === "link-page") {
+      setSavedRange(range);
+      setShowPageLinkDialog(true);
     } else if (id === "ai") {
       setShowAIAssistant(true);
     }
@@ -575,21 +598,22 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
 
   //check for socket connection
   useEffect(() => {
-    if (!fileId || quill === null || !session?.data?.user) return;
+    const user = sessionUserRef.current;
+    if (!fileId || quill === null || !user) return;
     connectSocket(
       process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000",
       fileId,
       {
-        id: session?.data?.user?.id as string,
-        name: session?.data?.user?.name as string,
-        email: session?.data?.user?.email as string,
-        image: session?.data?.user?.image as string || "",
+        id: user.id as string,
+        name: user.name as string,
+        email: user.email as string,
+        image: user.image as string || "",
       }
     );
     return () => {
       disconnectSocket();
     };
-  }, [fileId, quill, session?.data?.user]);
+  }, [fileId, quill, session?.data?.user?.id, session?.data?.user?.email, session?.data?.user?.name, session?.data?.user?.image]);
 
   //get the updated data as per the text edtior getting  updated
 
@@ -647,32 +671,35 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
       }
     };
     fetchDetails();
-  }, [fileId, workSpaceId, folderId, quill, socket]);
+  }, [fileId, workSpaceId, folderId, quill]);
 
   // for adding user to the room
   useEffect(() => {
-    if (!fileId || !quill || !socket || !session?.data?.user) return;
+    const user = sessionUserRef.current;
+    if (!fileId || !quill || !socket || !user) return;
     addListener("connect", () => {
-      sendMessage("createRoom", { fileId, joinedUser: session.data?.user });
+      sendMessage("createRoom", { fileId, joinedUser: sessionUserRef.current });
     });
-  }, [fileId, quill, socket, session?.data?.user]);
+  }, [fileId, quill, socket, session?.data?.user?.id]);
 
   //send all the changes to the user and save in db
   useEffect(() => {
+    const user = sessionUserRef.current;
     if (
       !fileId ||
       !quill ||
       !socket ||
-      !session?.data?.user ||
+      !user ||
       !localCursor.length
     )
       return;
 
     const cursorChangeHnalder = () => {
       return (range: any, oldRange: any, source: any) => {
-        if (source === "user" && session?.data.user.id && range) {
+        const currentUser = sessionUserRef.current;
+        if (source === "user" && currentUser?.id && range) {
           console.log(range, fileId, " in the sending res of cursor ");
-          sendMessage("cursor-move", range, fileId, session?.data.user.id);
+          sendMessage("cursor-move", range, fileId, currentUser.id);
         }
       };
     };
@@ -729,7 +756,7 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
     fileId,
     quill,
     socket,
-    session?.data?.user,
+    session?.data?.user?.id,
     folderId,
     details,
     localCursor,
@@ -763,11 +790,12 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
       setcollaborator(data);
       let allcollaborator = data;
       if (!quill) return;
-      if (session?.data?.user) {
+      const currentUser = sessionUserRef.current;
+      if (currentUser) {
         const cursors: any = quill.getModule("cursors");
         allcollaborator.forEach((user: any) => {
           if (
-            user.id !== session?.data?.user.id &&
+            user.id !== currentUser.id &&
             !cursors.cursors()[user.id]
           ) {
             cursors.createCursor(
@@ -785,7 +813,7 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
     return () => {
       removeListener("user-Joined", listener);
     };
-  }, [fileId, quill, socket]);
+  }, [fileId, quill, socket, session?.data?.user?.id]);
 
   // get the move ment of the cursor
   useEffect(() => {
@@ -1080,8 +1108,243 @@ const Texteditor = ({ dirType, fileId, data }: props) => {
             onFormat={handleBubbleFormat}
             onAIAction={handleBubbleAIAction}
             onClose={() => setShowBubbleMenu(false)}
+            isLink={isSelectionLink}
           />
         )}
+
+        {showBookmarkDialog && (
+          <div className="fixed inset-0 z-55 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="w-[420px] rounded-xl border border-muted bg-background/95 backdrop-blur-md p-6 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-200">
+              <div className="flex items-center justify-between border-b border-muted pb-3 mb-4">
+                <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                  <Globe className="h-4 w-4" /> Add Web Bookmark
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowBookmarkDialog(false);
+                    setBookmarkUrl("");
+                    setBookmarkTitle("");
+                    setBookmarkDesc("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground rounded-lg p-1 hover:bg-muted transition-all cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase">URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://example.com"
+                    value={bookmarkUrl}
+                    onChange={(e) => setBookmarkUrl(e.target.value)}
+                    className="w-full bg-muted/50 border border-muted-foreground/20 rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-muted-foreground/45"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Title (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="Custom Title"
+                    value={bookmarkTitle}
+                    onChange={(e) => setBookmarkTitle(e.target.value)}
+                    className="w-full bg-muted/50 border border-muted-foreground/20 rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-muted-foreground/45"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Description (Optional)</label>
+                  <textarea
+                    placeholder="Short description of the link..."
+                    value={bookmarkDesc}
+                    onChange={(e) => setBookmarkDesc(e.target.value)}
+                    rows={2}
+                    className="w-full bg-muted/50 border border-muted-foreground/20 rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-muted-foreground/45 resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 mt-2 pt-3 border-t border-muted">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowBookmarkDialog(false);
+                      setBookmarkUrl("");
+                      setBookmarkTitle("");
+                      setBookmarkDesc("");
+                    }}
+                    className="text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={!bookmarkUrl.trim()}
+                    onClick={() => {
+                      if (!quill) return;
+                      let cleanUrl = bookmarkUrl.trim();
+                      if (!/^https?:\/\//i.test(cleanUrl)) {
+                        cleanUrl = "https://" + cleanUrl;
+                      }
+                      let domain = "web";
+                      try {
+                        domain = new URL(cleanUrl).hostname;
+                      } catch (e) {}
+
+                      const title = bookmarkTitle.trim();
+                      const description = bookmarkDesc.trim();
+
+                      const html = `<a href="${cleanUrl}" target="_blank" style="text-decoration: none; display: block; margin: 16px 0;">
+                        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); padding: 16px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; transition: all 0.2s ease;">
+                          <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex-grow: 1; text-align: left;">
+                            <span style="font-size: 14px; font-weight: 600; color: #f8fafc; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; display: block;">${title || cleanUrl}</span>
+                            <span style="font-size: 11px; color: #94a3b8; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${description || "View shared bookmark"}</span>
+                            <span style="font-size: 10px; color: #a855f7; margin-top: 4px; font-weight: 500;">🌐 ${domain}</span>
+                          </div>
+                          <div style="flex-shrink: 0; width: 44px; height: 44px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            🔗
+                          </div>
+                        </div>
+                      </a><p><br></p>`;
+
+                      const index = savedRange ? savedRange.index : quill.getLength();
+                      quill.clipboard.dangerouslyPasteHTML(index, html);
+                      
+                      setShowBookmarkDialog(false);
+                      setBookmarkUrl("");
+                      setBookmarkTitle("");
+                      setBookmarkDesc("");
+                    }}
+                    className="bg-purple-600 hover:bg-purple-500 text-xs text-foreground"
+                  >
+                    Insert Bookmark
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showPageLinkDialog && (() => {
+          const currentWorkspace = workspaces.find((w) => w.id === workSpaceId);
+          const allFolders = currentWorkspace?.folders || [];
+          const allFiles = allFolders.flatMap((f) => f.files || []);
+
+          // Filter by search query
+          const filteredFolders = allFolders.filter(
+            (f) => f.title.toLowerCase().includes(pageSearchQuery.toLowerCase())
+          );
+          const filteredFiles = allFiles.filter(
+            (fil) => fil.title.toLowerCase().includes(pageSearchQuery.toLowerCase())
+          );
+
+          return (
+            <div className="fixed inset-0 z-55 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <div className="w-[420px] rounded-xl border border-muted bg-background/95 backdrop-blur-md p-5 shadow-2xl flex flex-col max-h-[480px] animate-in fade-in-50 zoom-in-95 duration-200">
+                <div className="flex items-center justify-between border-b border-muted pb-2.5 mb-3 flex-shrink-0">
+                  <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                    <Search className="h-4 w-4" /> Link to Page
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowPageLinkDialog(false);
+                      setPageSearchQuery("");
+                    }}
+                    className="text-muted-foreground hover:text-foreground rounded-lg p-1 hover:bg-muted transition-all cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="relative mb-3 flex-shrink-0">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search folders or files in this workspace..."
+                    value={pageSearchQuery}
+                    onChange={(e) => setPageSearchQuery(e.target.value)}
+                    className="w-full bg-muted/50 border border-muted-foreground/20 rounded-lg pl-9 pr-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-muted-foreground/45"
+                  />
+                </div>
+
+                <div className="flex-grow overflow-y-auto pr-1 flex flex-col gap-3">
+                  {/* Folders List */}
+                  {filteredFolders.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase px-2 mb-1 text-left">
+                        Folders
+                      </div>
+                      {filteredFolders.map((folder) => (
+                        <button
+                          key={folder.id}
+                          onClick={() => {
+                            if (!quill) return;
+                            const pageUrl = `/dashboard/${workSpaceId}/${folder.id}`;
+                            const html = `<a href="${pageUrl}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 8px; border-radius: 6px; font-size: 13.5px; font-weight: 500; margin: 2px 2px; transition: all 0.2s ease;">
+                              <span style="font-size: 14px;">${folder.iconId || "📁"}</span>
+                              <span style="border-bottom: 1px dashed rgba(96, 165, 250, 0.4);">${folder.title}</span>
+                            </a>&nbsp;`;
+
+                            const index = savedRange ? savedRange.index : quill.getLength();
+                            quill.clipboard.dangerouslyPasteHTML(index, html);
+                            
+                            setShowPageLinkDialog(false);
+                            setPageSearchQuery("");
+                          }}
+                          className="w-full flex items-center gap-3 px-2 py-1.5 rounded-lg text-left hover:bg-muted/60 transition-all text-xs text-foreground cursor-pointer"
+                        >
+                          <span className="text-sm p-1 bg-muted rounded-md">{folder.iconId || "📁"}</span>
+                          <span className="font-medium text-foreground">{folder.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Files List */}
+                  {filteredFiles.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase px-2 mb-1 text-left">
+                        Files
+                      </div>
+                      {filteredFiles.map((file) => (
+                        <button
+                          key={file.id}
+                          onClick={() => {
+                            if (!quill) return;
+                            const pageUrl = `/dashboard/${workSpaceId}/${file.folderId}/${file.id}`;
+                            const html = `<a href="${pageUrl}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); color: #c084fc; padding: 4px 8px; border-radius: 6px; font-size: 13.5px; font-weight: 500; margin: 2px 2px; transition: all 0.2s ease;">
+                              <span style="font-size: 14px;">${file.iconId || "📄"}</span>
+                              <span style="border-bottom: 1px dashed rgba(192, 132, 252, 0.4);">${file.title}</span>
+                            </a>&nbsp;`;
+
+                            const index = savedRange ? savedRange.index : quill.getLength();
+                            quill.clipboard.dangerouslyPasteHTML(index, html);
+                            
+                            setShowPageLinkDialog(false);
+                            setPageSearchQuery("");
+                          }}
+                          className="w-full flex items-center gap-3 px-2 py-1.5 rounded-lg text-left hover:bg-muted/60 transition-all text-xs text-foreground cursor-pointer"
+                        >
+                          <span className="text-sm p-1 bg-muted rounded-md">{file.iconId || "📄"}</span>
+                          <span className="font-medium text-foreground">{file.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {filteredFolders.length === 0 && filteredFiles.length === 0 && (
+                    <div className="text-center text-xs text-muted-foreground py-8">
+                      No matching pages found in this workspace.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
         <div
           id="container"
           className="max-w-[800px]"

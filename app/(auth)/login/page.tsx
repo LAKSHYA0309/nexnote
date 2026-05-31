@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link"; 
 import Logo from "@/public/nexnotelogo.svg"
-import { signIn ,auth,signOut} from "@/auth";
+import { loginWithGoogle, loginAsGuest } from "@/lib/serverAction/auth.server";
 import Image from "next/image";
 import { LogOut } from "lucide-react";
 
@@ -45,12 +45,7 @@ const LoginPage = async() => {
 
           <CardContent className="space-y-6">
             {/* Google Login Button */}
-            <form
-              action={async () => {
-                "use server";
-                await signIn('google');
-              }}
-            >
+            <form action={loginWithGoogle}>
               <Button
                 className="w-full h-12 bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-200 cursor-pointer shadow-md hover:shadow-[0_0_20px_rgba(255,255,255,0.12)] transition-all duration-300 rounded-2xl active:scale-[0.98] font-semibold text-[15px]"
                 type="submit"
@@ -81,12 +76,7 @@ const LoginPage = async() => {
             </form>
 
             {/* Premium Guest Login Button */}
-            <form
-              action={async () => {
-                "use server";
-                await signIn('credentials', { email: 'guest@nexnote.com', password: 'guest', redirectTo: '/dashboard' });
-              }}
-            >
+            <form action={loginAsGuest}>
               <Button
                 className="w-full h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 text-white border-0 cursor-pointer shadow-lg hover:shadow-[0_0_25px_rgba(79,70,229,0.35)] transition-all duration-300 rounded-2xl active:scale-[0.98] font-semibold text-[15px]"
                 type="submit"

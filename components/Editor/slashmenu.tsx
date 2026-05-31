@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Terminal, Sparkles, MessageSquare, FileText, Layout, Calendar, Table } from "lucide-react";
+import { Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Terminal, Sparkles, MessageSquare, FileText, Layout, Calendar, Table, Link2, FileSymlink } from "lucide-react";
 
 interface SlashMenuItem {
   id: string;
@@ -96,6 +96,14 @@ export const SlashMenu = ({ x, y, onClose, onSelect }: SlashMenuProps) => {
       category: "Basic Blocks",
     },
     {
+      id: "link-bookmark",
+      label: "Web Bookmark",
+      description: "Insert a visual link bookmark card.",
+      icon: <Link2 className="h-4 w-4 text-emerald-400" />,
+      action: () => onSelect("link-bookmark"),
+      category: "Basic Blocks",
+    },
+    {
       id: "table",
       label: "Grid Table",
       description: "Insert a customizable tracking table.",
@@ -125,6 +133,14 @@ export const SlashMenu = ({ x, y, onClose, onSelect }: SlashMenuProps) => {
       description: "Organize days of the week with checklists.",
       icon: <Calendar className="h-4 w-4 text-indigo-400" />,
       action: () => onSelect("tpl-planner"),
+      category: "Templates & Advanced",
+    },
+    {
+      id: "link-page",
+      label: "Link to page",
+      description: "Link to an existing folder or file.",
+      icon: <FileSymlink className="h-4 w-4 text-purple-400" />,
+      action: () => onSelect("link-page"),
       category: "Templates & Advanced",
     },
   ];
